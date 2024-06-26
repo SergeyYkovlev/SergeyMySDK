@@ -14,4 +14,8 @@ public class SimpleFunction {
     public func sayHello() -> String {
         return "Hello from YourSDKName!"
     }
+    
+    public func newSayHello(name: String ) -> String {
+        return "Hello \(name)"
+    }
 }
