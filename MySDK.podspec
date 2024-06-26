@@ -1,16 +1,16 @@
 Pod::Spec.new do |s|
-  s.name         = 'MySDK'
+  s.name         = 'SergeyMySDK'
   s.version      = '0.1.0'
-  s.summary      = 'A brief summary of MySDK.'
+  s.summary      = 'A brief summary of SergeyMySDK.'
   s.description  = <<-DESC
-                    A longer description of MySDK in more detail.
+                    A longer description of SergeyMySDK in more detail.
                     DESC
-  s.homepage     = 'https://github.com/SergeyYkovlev/MySDK'
+  s.homepage     = 'https://github.com/SergeyYkovlev/SergeyMySDK'
   s.license      = { :type => 'MIT', :file => 'LICENSE' }
   s.author       = { 'Sergey Yakovlev' => 'yakovlevserg09@gmail.com' }
-  s.source       = { :git => 'https://github.com/SergeyYkovlev/MySDK.git', :tag => s.version.to_s }
+  s.source       = { :git => 'https://github.com/SergeyYkovlev/SergeyMySDK.git', :tag => s.version.to_s }
   s.ios.deployment_target = '12.0'
-  s.source_files  = 'MySDK/**/*.{swift,h,m}'
+  s.source_files  = 'SergeyMySDK/**/*.{swift,h,m}'
   s.frameworks    = 'UIKit'
   s.swift_versions = ['5.0']
 end
