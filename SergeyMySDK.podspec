@@ -10,7 +10,7 @@ Pod::Spec.new do |s|
   s.author       = { 'Sergey Yakovlev' => 'yakovlevserg09@gmail.com' }
   s.source       = { :git => 'https://github.com/SergeyYkovlev/SergeyMySDK.git', :tag => s.version.to_s }
   s.ios.deployment_target = '12.0'
-  s.source_files  = 'SergeyMySDK/**/*.{swift,h,m}'
+  s.source_files  = 'MySDK/**/*.{swift,h,m}'
   s.frameworks    = 'UIKit'
   s.swift_versions = ['5.0']
 end
