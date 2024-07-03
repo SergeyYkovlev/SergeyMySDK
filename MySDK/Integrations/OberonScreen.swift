@@ -15,8 +15,8 @@ public protocol OberonScreenDelegate: AnyObject {
 
 public class OberonScreen: UIViewController {
     
-    var launchBundle: AnyClass?
-    var projectId: String = ""
+    public var launchBundle: AnyClass?
+    public var projectId: String = ""
     public weak var delegate: OberonScreenDelegate?
     
     public override func viewDidLoad() {
@@ -61,13 +61,13 @@ public class OberonScreen: UIViewController {
     
     @objc func switchToDevelopment() {
         LogScope.shared.mode = EnvironmentMode.development
-        switchMode()
+//        switchMode()
         delegate?.didSelectEnvironment(.development)
     }
     
     @objc func switchToProduction() {
         LogScope.shared.mode = EnvironmentMode.production
-        switchMode()
+//        switchMode()
         delegate?.didSelectEnvironment(.production)
     }
     

@@ -10,7 +10,7 @@ import os.log
 
 
 public class OberonLogger {
-    static let shared = OberonLogger()
+    public static let shared = OberonLogger()
 
     private init() {}
 
@@ -26,7 +26,7 @@ public class PrintInterceptor {
     private var pipe: Pipe
     private var fileHandle: FileHandle
     
-    init() {
+    public init() {
         originalStdout = dup(STDOUT_FILENO)
         pipe = Pipe()
         fileHandle = pipe.fileHandleForReading
@@ -49,7 +49,7 @@ public class PrintInterceptor {
     
     private func handlePrint(_ message: String) {
         // Здесь вы можете обработать или логировать перехваченные сообщения
-        print("Intercepted print: \(message)", terminator: "")
+//        print("Intercepted print: \(message)", terminator: "")
         LogScope.shared.logInfo(identification: message);
     }
 }

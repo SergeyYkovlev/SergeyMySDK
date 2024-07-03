@@ -7,6 +7,7 @@
 
 import Foundation
 import UIKit
+import CommonCrypto
 
 public enum EnvironmentMode {
     case production
@@ -14,11 +15,11 @@ public enum EnvironmentMode {
 }
 
 public class LogScope {
-    static let shared = LogScope()
-    private init() {}
+    public static let shared = LogScope()
+    public init() {}
     
     var deviceId: UUID = UUID()
-    var projectId: String = ""
+    public var projectId: String = ""
     var eventsCache = [RegisteredEvent]()
     let queue = DispatchQueue(label: "com.logscope.queue", qos: .background)
     
@@ -85,26 +86,36 @@ public class LogScope {
     private func addLog(_ log: RegisteredEvent) {
         queue.sync {
             eventsCache.append(log)
-            if eventsCache.count > 100 { // Batch size limit
-                sendLogs()
-            }
+            
+            sendLogs()
+            
         }
     }
     
     private func sendLogs() {
-        guard !eventsCache.isEmpty else { return }
         
         let events = eventsCache
         eventsCache.removeAll()
+
+        let device = UIDevice.current
+        let identifierForVendor = device.identifierForVendor?.uuidString ?? "unknown_device_id"
         
+        let deviceId = identifierForVendor.md5()
         
         let batch = EventsBatch(
             isLive: true,
+            iosInfo: IOSInfo(isPhysical: TARGET_OS_SIMULATOR == 0,
+                             localizedModel: UIDevice.current.localizedModel,
+                             model: UIDevice.current.model,
+                             systemVersion: UIDevice.current.systemVersion,
+                             systemName: UIDevice.current.systemName,
+                             utsName: getUtsName()),
+            identification: Identification(code: deviceId),
             bundle: BundleInfo(version: ""),
             events: events,
             projectID: projectId)
         
-        guard let url = URL(string: "https://logscope.ru:443/api/logs") else { return }
+        guard let url = URL(string: "https://logscope.ru:443") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -132,6 +143,27 @@ public class LogScope {
             print("Failed to encode log batch: \(error)")
         }
     }
+    
+    private func getUtsName() -> UtsName {
+        var uts = utsname()
+        uname(&uts)
+        let sysname = withUnsafePointer(to: &uts.sysname) { ptr in
+            return String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self))
+        }
+        let nodename = withUnsafePointer(to: &uts.nodename) { ptr in
+            return String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self))
+        }
+        let release = withUnsafePointer(to: &uts.release) { ptr in
+            return String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self))
+        }
+        let version = withUnsafePointer(to: &uts.version) { ptr in
+            return String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self))
+        }
+        let machine = withUnsafePointer(to: &uts.machine) { ptr in
+            return String(cString: UnsafeRawPointer(ptr).assumingMemoryBound(to: CChar.self))
+        }
+        return UtsName(sysName: sysname, nodeName: nodename, releaseName: release, version: version, machine: machine)
+    }
 
     private func catchErrors() {
             NSSetUncaughtExceptionHandler { exception in
@@ -154,3 +186,19 @@ private func convertToJSONString(_ dictionary: [String: Any]?) -> String? {
             return nil
         }
     }
+
+extension String {
+    func md5() -> String {
+        let length = Int(CC_MD5_DIGEST_LENGTH)
+        let messageData = self.data(using:.utf8)!
+        var digestData = Data(count: length)
+
+        _ = digestData.withUnsafeMutableBytes { digestBytes in
+            messageData.withUnsafeBytes { messageBytes in
+                CC_MD5(messageBytes, CC_LONG(messageData.count), digestBytes)
+            }
+        }
+
+        return digestData.map { String(format: "%02hhx", $0) }.joined()
+    }
+}
