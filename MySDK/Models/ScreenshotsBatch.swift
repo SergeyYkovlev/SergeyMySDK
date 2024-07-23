@@ -8,11 +8,11 @@
 import Foundation
 
 struct ScreenshotsBatch: Codable {
-    let framesMapping: [Int]?
+    let framesMaping: [Int]?
     let frames: [String]?
     
-    init(framesMapping: [Int]? = nil, frames: [String]? = nil) {
-        self.framesMapping = framesMapping
+    init(framesMaping: [Int]? = nil, frames: [String]? = nil) {
+        self.framesMaping = framesMaping
         self.frames = frames
     }
 }

@@ -70,7 +70,7 @@ public class LogScopeURLProtocol: URLProtocol {
         var responseLog = [String: Any]()
         responseLog["https"] = response.url?.scheme == "https"
         responseLog["url"] = response.url?.absoluteString ?? ""
-        responseLog["method"] = request.httpMethod ?? ""
+        responseLog["method"] = response.url?.absoluteString ?? ""
         responseLog["status"] = response.statusCode
         responseLog["isRedirect"] = (300...399).contains(response.statusCode)
         
@@ -82,12 +82,33 @@ public class LogScopeURLProtocol: URLProtocol {
         }
         responseLog["responseHeaders"] = responseHeaders
         
+        if let data = data {
+            do {
+                // Попытка декодирования данных в JSON объект
+                let jsonObject = try JSONSerialization.jsonObject(with: data, options: [])
+                if JSONSerialization.isValidJSONObject(jsonObject) {
+                    // Преобразование JSON объекта в строку с отступами для улучшения читаемости
+                    let jsonData = try JSONSerialization.data(withJSONObject: jsonObject, options: .prettyPrinted)
+                    if var jsonString = String(data: jsonData, encoding: .utf8) {
+                        jsonString = jsonString.replacingOccurrences(of: "\\/", with: "/")
+                        responseLog["data"] = jsonString
+                    } else {
+                        responseLog["data"] = String(data: data, encoding: .utf8) ?? "Unable to convert data to string"
+                    }
+                } else {
+                    responseLog["data"] = String(data: data, encoding: .utf8) ?? "Unable to convert data to string"
+                }
+            } catch {
+                responseLog["data"] = String(data: data, encoding: .utf8) ?? "Unable to convert data to string"
+            }
+        }
+        
         if let error = error {
             responseLog["failedToCall"] = true
             responseLog["exception"] = error.localizedDescription
             LogScope.shared.rawLog(identification: "Ошибка запроса", scope: "Главный клиент", kind: "Уведомление", severity: "Отладка", payload: responseLog)
         } else {
-            LogScope.shared.rawLog(identification: "Сетевой запрос", scope: "Главный клиент", kind: "Уведомление", severity: "Отладка", payload: responseLog)
+            LogScope.shared.rawLog(identification: "Response Log", scope: "Главный клиент", kind: "Network", severity: "Отладка", payload: responseLog)
         }
     }
 }

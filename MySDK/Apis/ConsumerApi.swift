@@ -51,6 +51,10 @@ class ConsumerApi: ApiClient {
      * @return Bool
      */
     func consumerConsumeEvents(body: EventsBatch) throws -> Bool {
+//        guard isInternetAvailable() else {
+//            throw NSError(domain: "No internet connection", code: 503, userInfo: nil)
+//        }
+
         let localVariableBody: Any? = body
         let localVariableConfig = RequestConfig(
             method: .POST,
@@ -70,7 +74,11 @@ class ConsumerApi: ApiClient {
         case .clientError:
             throw ClientException(message: (response as! ClientError<Bool>).body as? String ?? "Client error")
         case .serverError:
-            throw ServerException(message: (response as! ServerError<Bool>).message ?? "Server error")
+            if let serverError = response as? ServerError<Bool> {
+                throw ServerException(message: serverError.message ?? "Server error")
+            } else {
+                throw ServerException(message: "Server error")
+            }
         }
     }
 

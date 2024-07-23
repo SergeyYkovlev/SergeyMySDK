@@ -9,7 +9,7 @@ import Foundation
 
 struct RegisteredEvent: Codable {
     let id: String
-    let timestamp: TimeInterval
+    let timestamp: Int
     let identification: String
     let kind: String
     let scope: String
@@ -18,7 +18,7 @@ struct RegisteredEvent: Codable {
     let starred: Bool?
     let isError: Bool?
     
-    init(id: String, timestamp: TimeInterval, identification: String, kind: String, scope: String, severity: String, payload: String? = nil, starred: Bool? = nil, isError: Bool? = nil) {
+    init(id: String, timestamp: Int, identification: String, kind: String, scope: String, severity: String, payload: String? = nil, starred: Bool? = nil, isError: Bool? = nil) {
         self.id = id
         self.timestamp = timestamp
         self.identification = identification

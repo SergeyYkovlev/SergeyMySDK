@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		331037BC2C3FB73500CCC10C /* NetworkMonitor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331037BB2C3FB73500CCC10C /* NetworkMonitor.swift */; };
+		331037BE2C3FB75900CCC10C /* RequestStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 331037BD2C3FB75900CCC10C /* RequestStorage.swift */; };
 		3323EBA42C2C2BDB0028A19E /* MySDK.docc in Sources */ = {isa = PBXBuildFile; fileRef = 3323EBA32C2C2BDB0028A19E /* MySDK.docc */; };
 		3323EBAA2C2C2BDB0028A19E /* MySDK.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3323EB9F2C2C2BDB0028A19E /* MySDK.framework */; };
 		3323EBAF2C2C2BDB0028A19E /* MySDKTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3323EBAE2C2C2BDB0028A19E /* MySDKTests.swift */; };
@@ -115,6 +117,8 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		331037BB2C3FB73500CCC10C /* NetworkMonitor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkMonitor.swift; sourceTree = "<group>"; };
+		331037BD2C3FB75900CCC10C /* RequestStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RequestStorage.swift; sourceTree = "<group>"; };
 		3323EB9F2C2C2BDB0028A19E /* MySDK.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MySDK.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		3323EBA22C2C2BDB0028A19E /* MySDK.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MySDK.h; sourceTree = "<group>"; };
 		3323EBA32C2C2BDB0028A19E /* MySDK.docc */ = {isa = PBXFileReference; lastKnownFileType = folder.documentationcatalog; path = MySDK.docc; sourceTree = "<group>"; };
@@ -386,6 +390,8 @@
 				3323EC6D2C2D6BB40028A19E /* OberonTree.swift */,
 				3323EC6F2C2D6D740028A19E /* LogScope.swift */,
 				3323EC712C2D74E20028A19E /* OberonScreen.swift */,
+				331037BB2C3FB73500CCC10C /* NetworkMonitor.swift */,
+				331037BD2C3FB75900CCC10C /* RequestStorage.swift */,
 			);
 			path = Integrations;
 			sourceTree = "<group>";
@@ -533,6 +539,7 @@
 				3323EBF12C2D2F640028A19E /* IOSInfo.swift in Sources */,
 				3323EC1B2C2D3DF00028A19E /* RegisterRequest.swift in Sources */,
 				3323EBE12C2D2C5B0028A19E /* NumberFilter.swift in Sources */,
+				331037BC2C3FB73500CCC10C /* NetworkMonitor.swift in Sources */,
 				3323EC722C2D74E20028A19E /* OberonScreen.swift in Sources */,
 				3323EBC12C2C475A0028A19E /* ApiAbstractions.swift in Sources */,
 				3323EBE72C2D2DBC0028A19E /* FilterableListOfAssociatedAccountSummary.swift in Sources */,
@@ -549,6 +556,7 @@
 				3323EC532C2D5A550028A19E /* SessionFilter.swift in Sources */,
 				3323EBED2C2D2F140028A19E /* DeviceSummary.swift in Sources */,
 				3323EC4D2C2D571D0028A19E /* SearchResult.swift in Sources */,
+				331037BE2C3FB75900CCC10C /* RequestStorage.swift in Sources */,
 				3323EC372C2D4EBC0028A19E /* LiveDevicesListRequest.swift in Sources */,
 				3323EBC92C2C49210028A19E /* LocalDateTimeAdapter.swift in Sources */,
 				3323EC352C2D4DB80028A19E /* ProblemsApi.swift in Sources */,

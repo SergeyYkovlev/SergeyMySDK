@@ -1,4 +1,3 @@
-//
 //  LogScope.swift
 //  MySDK
 //
@@ -8,6 +7,9 @@
 import Foundation
 import UIKit
 import CommonCrypto
+import Network
+import Combine
+
 
 public enum EnvironmentMode {
     case production
@@ -17,31 +19,30 @@ public enum EnvironmentMode {
 public class LogScope {
     public static let shared = LogScope()
     public init() {}
-    
+
     var deviceId: UUID = UUID()
+    private var isNetworkMonitorSetup = false
     public var projectId: String = ""
     var eventsCache = [RegisteredEvent]()
+    private var cancellables = Set<AnyCancellable>()
     let queue = DispatchQueue(label: "com.logscope.queue", qos: .background)
-    
+    private let consumerApi = ConsumerApi(basePath: "https://logscope.ru")
+    private var isSendingLogs = false
+
     var mode: EnvironmentMode = .production
-    
+
     func start(context: UIViewController, projectId: String) {
         self.projectId = projectId
         deviceId = UUID() // This would be a placeholder for device-specific unique ID generation.
-        
+
         catchErrors()
-        
-        // Start the background task for sending logs
-        queue.async {
-            self.sendLogs()
-        }
     }
-    
+
     public func logInfo(identification: String, payload: [String: Any]? = nil) {
         let payloadString = convertToJSONString(payload) ?? "{}"
         addLog(RegisteredEvent(
             id: UUID().uuidString,
-            timestamp: Date().timeIntervalSince1970,
+            timestamp: Int(Date().timeIntervalSince1970),
             identification: identification,
             kind: "Global",
             scope: "Information",
@@ -50,16 +51,16 @@ public class LogScope {
             starred: false
         ))
     }
-    
+
     public func logException(ex: Error) {
         logException(identification: ex.localizedDescription, stacktrace: Thread.callStackSymbols)
     }
-    
+
     public func logException(identification: String?, stacktrace: [String]) {
         let payloadString = convertToJSONString(["stacktrace": stacktrace]) ?? "{}"
         addLog(RegisteredEvent(
             id: UUID().uuidString,
-            timestamp: Date().timeIntervalSince1970,
+            timestamp: Int(Date().timeIntervalSince1970),
             identification: identification ?? "No message",
             kind: "Global",
             scope: "Information",
@@ -68,12 +69,12 @@ public class LogScope {
             starred: false
         ))
     }
-    
+
     public func rawLog(identification: String, scope: String, kind: String, severity: String, payload: [String: Any]? = nil) {
         let payloadString = convertToJSONString(payload) ?? "{}"
         addLog(RegisteredEvent(
             id: UUID().uuidString,
-            timestamp: Date().timeIntervalSince1970,
+            timestamp: Int(Date().timeIntervalSince1970),
             identification: identification,
             kind: kind,
             scope: scope,
@@ -82,68 +83,72 @@ public class LogScope {
             starred: false
         ))
     }
-    
+
     private func addLog(_ log: RegisteredEvent) {
-        queue.sync {
-            eventsCache.append(log)
-            
-            sendLogs()
-            
+        
+        if !isNetworkMonitorSetup {
+                    NetworkMonitor.shared.isConnectedPublisher
+                        .sink { [weak self] isConnected in
+                            if isConnected {
+                                self?.sendStoredRequests()
+                            }
+                        }
+                        .store(in: &cancellables)
+                    
+                    isNetworkMonitorSetup = true
+                }
+        
+        queue.async {
+            self.eventsCache.append(log)
+            self.sendLogs()
         }
     }
-    
-    private func sendLogs() {
-        
-        let events = eventsCache
-        eventsCache.removeAll()
 
-        let device = UIDevice.current
-        let identifierForVendor = device.identifierForVendor?.uuidString ?? "unknown_device_id"
-        
-        let deviceId = identifierForVendor.md5()
-        
-        let batch = EventsBatch(
-            isLive: true,
-            iosInfo: IOSInfo(isPhysical: TARGET_OS_SIMULATOR == 0,
-                             localizedModel: UIDevice.current.localizedModel,
-                             model: UIDevice.current.model,
-                             systemVersion: UIDevice.current.systemVersion,
-                             systemName: UIDevice.current.systemName,
-                             utsName: getUtsName()),
-            identification: Identification(code: deviceId),
-            bundle: BundleInfo(version: ""),
-            events: events,
-            projectID: projectId)
-        
-        guard let url = URL(string: "https://logscope.ru:443") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        do {
-            let encoder = JSONEncoder()
-            let data = try encoder.encode(batch)
-            request.httpBody = data
-            
-            let task = URLSession.shared.dataTask(with: request) { _, response, error in
-                if let error = error {
-                    print("Error sending logs: \(error)")
-                    return
+    private func sendLogs() {
+        queue.async { [weak self] in
+            guard let self = self else { return }
+            guard !self.isSendingLogs else { return }
+            self.isSendingLogs = true
+
+            while !self.eventsCache.isEmpty {
+                let events = self.eventsCache
+                self.eventsCache.removeAll()
+
+                let batch = EventsBatch(
+                    isLive: true,
+                    os: 1,
+                    iosInfo: IOSInfo(
+                        isPhysical: TARGET_OS_SIMULATOR == 0,
+                        localizedModel: UIDevice.current.localizedModel,
+                        model: UIDevice.current.model,
+                        systemVersion: UIDevice.current.systemVersion,
+                        systemName: UIDevice.current.systemName,
+                        utsName: self.getUtsName()),
+                    identification: Identification(code: self.deviceId.uuidString, userIdentification: ""),
+                    bundle: BundleInfo(version: "", build: "", branch: ""),
+                    screenshotsBatch: ScreenshotsBatch(framesMaping: [], frames: []),
+                    events: events,
+                    projectID: self.projectId
+                )
+
+                do {
+                    let success = try self.consumerApi.consumerConsumeEvents(body: batch)
+                    if success {
+                        NSLog("Logs sent successfully")
+                    } else {
+                        NSLog("Failed to send logs")
+                    }
+                } catch {
+                    NSLog("Error sending logs: \(error)")
                 }
                 
-                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
-                    print("Logs sent successfully")
-                } else {
-                    print("Failed to send logs")
-                }
+                Thread.sleep(forTimeInterval: 1) // Delay for 1 second between requests
             }
-            
-            task.resume()
-        } catch {
-            print("Failed to encode log batch: \(error)")
+
+            self.isSendingLogs = false
         }
     }
-    
+
     private func getUtsName() -> UtsName {
         var uts = utsname()
         uname(&uts)
@@ -166,26 +171,53 @@ public class LogScope {
     }
 
     private func catchErrors() {
-            NSSetUncaughtExceptionHandler { exception in
-                LogScope.handleUncaughtException(exception)
-            }
+        NSSetUncaughtExceptionHandler { exception in
+            LogScope.handleUncaughtException(exception)
         }
-    
+    }
+
     private static func handleUncaughtException(_ exception: NSException) {
-            LogScope.shared.logException(identification: exception.reason, stacktrace: exception.callStackSymbols)
+        LogScope.shared.logException(identification: exception.reason, stacktrace: exception.callStackSymbols)
+    }
+    
+    func sendStoredRequests() {
+        let storedRequests = RequestStorage().getStoredRequests()
+        
+        storedRequests.forEach { storedRequest in
+            var request = URLRequest(url: storedRequest.url)
+            request.httpMethod = storedRequest.method
+            request.allHTTPHeaderFields = storedRequest.headers
+            request.httpBody = storedRequest.body
+            
+            let task = URLSession.shared.dataTask(with: request) { _, response, error in
+                if let error = error {
+                    NSLog("Error sending stored request: \(error)")
+                    return
+                }
+                
+                if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
+                    NSLog("Stored request sent successfully")
+                    RequestStorage().clearStoredRequests() // Clear stored requests if sent successfully
+                } else {
+                    NSLog("Failed to send stored request")
+                }
+            }
+            
+            task.resume()
         }
+    }
 }
 
 private func convertToJSONString(_ dictionary: [String: Any]?) -> String? {
-        guard let dictionary = dictionary else { return nil }
-        do {
-            let jsonData = try JSONSerialization.data(withJSONObject: dictionary, options: [])
-            return String(data: jsonData, encoding: .utf8)
-        } catch {
-            print("Error converting dictionary to JSON string: \(error)")
-            return nil
-        }
+    guard let dictionary = dictionary else { return nil }
+    do {
+        let jsonData = try JSONSerialization.data(withJSONObject: dictionary, options: [])
+        return String(data: jsonData, encoding: .utf8)
+    } catch {
+        NSLog("Error converting dictionary to JSON string: \(error)")
+        return nil
     }
+}
 
 extension String {
     func md5() -> String {
