@@ -8,6 +8,7 @@
 import Network
 import Combine
 
+@available(iOS 13.0, *)
 class NetworkMonitor {
     static let shared = NetworkMonitor()
 
