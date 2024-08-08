@@ -8,7 +8,6 @@
 import Foundation
 import UIKit
 
-
 public protocol OberonScreenDelegate: AnyObject {
     func didSelectEnvironment(_ environment: EnvironmentMode)
 }
@@ -23,7 +22,11 @@ public class OberonScreen: UIViewController {
         super.viewDidLoad()
         
         print("LogScope", "Запуск системы")
-        LogScope.shared.start(context: self, projectId: projectId)
+        if #available(iOS 13.0, *) {
+            LogScope.shared.start(context: self, projectId: projectId)
+        } else {
+            // Handle older iOS versions
+        }
         
         // Set up the UI
         setupUI()
@@ -31,7 +34,11 @@ public class OberonScreen: UIViewController {
     
     func setupUI() {
         let idLabel = UILabel()
-        idLabel.text = LogScope.shared.deviceId.uuidString
+        if #available(iOS 13.0, *) {
+            idLabel.text = LogScope.shared.deviceId.uuidString
+        } else {
+            idLabel.text = "Unsupported iOS version"
+        }
         idLabel.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(idLabel)
         
@@ -60,14 +67,16 @@ public class OberonScreen: UIViewController {
     }
     
     @objc func switchToDevelopment() {
-        LogScope.shared.mode = EnvironmentMode.development
-//        switchMode()
+        if #available(iOS 13.0, *) {
+            LogScope.shared.mode = EnvironmentMode.development
+        }
         delegate?.didSelectEnvironment(.development)
     }
     
     @objc func switchToProduction() {
-        LogScope.shared.mode = EnvironmentMode.production
-//        switchMode()
+        if #available(iOS 13.0, *) {
+            LogScope.shared.mode = EnvironmentMode.production
+        }
         delegate?.didSelectEnvironment(.production)
     }
     
@@ -84,7 +93,7 @@ public class OberonScreen: UIViewController {
 //    override func viewDidLoad() {
 ////        self.launchBundle = MainActivity.self
 //        self.projectId = "1ac96c34-18ff-477a-88c5-77af95b30e68"
-//        
+//
 //        super.viewDidLoad()
 //    }
 //}

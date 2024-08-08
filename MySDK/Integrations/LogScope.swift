@@ -86,19 +86,19 @@ public class LogScope {
     }
 
     private func addLog(_ log: RegisteredEvent) {
-        
         if !isNetworkMonitorSetup {
-                    NetworkMonitor.shared.isConnectedPublisher
-                        .sink { [weak self] isConnected in
-                            if isConnected {
-                                self?.sendStoredRequests()
-                            }
+            if #available(iOS 13.0, *) {
+                NetworkMonitor.shared.isConnectedPublisher
+                    .sink { [weak self] isConnected in
+                        if isConnected {
+                            self?.sendStoredRequests()
                         }
-                        .store(in: &cancellables)
-                    
-                    isNetworkMonitorSetup = true
-                }
-        
+                    }
+                    .store(in: &cancellables)
+            }
+            isNetworkMonitorSetup = true
+        }
+
         queue.async {
             self.eventsCache.append(log)
             self.sendLogs()
@@ -142,7 +142,7 @@ public class LogScope {
                 } catch {
                     NSLog("Error sending logs: \(error)")
                 }
-                
+
                 Thread.sleep(forTimeInterval: 1) // Delay for 1 second between requests
             }
 
@@ -180,22 +180,22 @@ public class LogScope {
     private static func handleUncaughtException(_ exception: NSException) {
         LogScope.shared.logException(identification: exception.reason, stacktrace: exception.callStackSymbols)
     }
-    
+
     func sendStoredRequests() {
         let storedRequests = RequestStorage().getStoredRequests()
-        
+
         storedRequests.forEach { storedRequest in
             var request = URLRequest(url: storedRequest.url)
             request.httpMethod = storedRequest.method
             request.allHTTPHeaderFields = storedRequest.headers
             request.httpBody = storedRequest.body
-            
+
             let task = URLSession.shared.dataTask(with: request) { _, response, error in
                 if let error = error {
                     NSLog("Error sending stored request: \(error)")
                     return
                 }
-                
+
                 if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 {
                     NSLog("Stored request sent successfully")
                     RequestStorage().clearStoredRequests() // Clear stored requests if sent successfully
@@ -203,7 +203,7 @@ public class LogScope {
                     NSLog("Failed to send stored request")
                 }
             }
-            
+
             task.resume()
         }
     }
@@ -219,19 +219,3 @@ private func convertToJSONString(_ dictionary: [String: Any]?) -> String? {
         return nil
     }
 }
-
-//extension String {
-//    func md5() -> String {
-//        let length = Int(CC_MD5_DIGEST_LENGTH)
-//        let messageData = self.data(using:.utf8)!
-//        var digestData = Data(count: length)
-//
-//        _ = digestData.withUnsafeMutableBytes { digestBytes in
-//            messageData.withUnsafeBytes { messageBytes in
-//                CC_MD5(messageBytes, CC_LONG(messageData.count), digestBytes)
-//            }
-//        }
-//
-//        return digestData.map { String(format: "%02hhx", $0) }.joined()
-//    }
-//}
