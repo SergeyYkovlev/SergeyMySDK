@@ -8,6 +8,7 @@
 import Foundation
 import os.log
 
+@available(iOS 13.0, *)
 public class LogScopeURLProtocol: URLProtocol {
     
     public override class func canInit(with request: URLRequest) -> Bool {
@@ -63,7 +64,9 @@ public class LogScopeURLProtocol: URLProtocol {
         }
         requestLog["requestHeaders"] = requestHeaders
         
-        LogScope.shared.rawLog(identification: "Сетевой запрос", scope: "Главный клиент", kind: "Уведомление", severity: "Отладка", payload: requestLog)
+        if #available(iOS 13.0, *) {
+            LogScope.shared.rawLog(identification: "Сетевой запрос", scope: "Главный клиент", kind: "Уведомление", severity: "Отладка", payload: requestLog)
+        }
     }
     
     private func logResponse(_ response: HTTPURLResponse, data: Data?, error: Error?) {
@@ -106,9 +109,13 @@ public class LogScopeURLProtocol: URLProtocol {
         if let error = error {
             responseLog["failedToCall"] = true
             responseLog["exception"] = error.localizedDescription
-            LogScope.shared.rawLog(identification: "Ошибка запроса", scope: "Главный клиент", kind: "Уведомление", severity: "Отладка", payload: responseLog)
+            if #available(iOS 13.0, *) {
+                LogScope.shared.rawLog(identification: "Ошибка запроса", scope: "Главный клиент", kind: "Уведомление", severity: "Отладка", payload: responseLog)
+            }
         } else {
-            LogScope.shared.rawLog(identification: "Response Log", scope: "Главный клиент", kind: "Network", severity: "Отладка", payload: responseLog)
+            if #available(iOS 13.0, *) {
+                LogScope.shared.rawLog(identification: "Response Log", scope: "Главный клиент", kind: "Network", severity: "Отладка", payload: responseLog)
+            }
         }
     }
 }

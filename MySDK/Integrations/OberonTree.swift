@@ -8,19 +8,18 @@
 import Foundation
 import os.log
 
-
+@available(iOS 13.0, *)
 public class OberonLogger {
     static let shared = OberonLogger()
 
     private init() {}
 
     public func log(priority: OSLogType, tag: String? = nil, message: String, error: Error? = nil) {
-        LogScope.shared.logInfo(identification: message);
+        LogScope.shared.logInfo(identification: message)
     }
 }
 
-
-
+@available(iOS 13.0, *)
 public class PrintInterceptor {
     private var originalStdout: Int32
     private var pipe: Pipe
@@ -49,9 +48,7 @@ public class PrintInterceptor {
     
     private func handlePrint(_ message: String) {
         // Здесь вы можете обработать или логировать перехваченные сообщения
-//        print("Intercepted print: \(message)", terminator: "")
         let payload: [String: Any] = ["message": "\(message)"]
-        LogScope.shared.logInfo(identification: "Print log", payload: payload);
+        LogScope.shared.logInfo(identification: "Print log", payload: payload)
     }
 }
-
